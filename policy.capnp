@@ -19,6 +19,10 @@ struct Policy {
   joinPolicies    @5 :List(JPolicy);
   topology        @6 :List(Peering);
   trustedServices @7 :List(TrustedService);
+  transitNodes    @8 :List(Text);  # node identifiers (same convention as Peering.nodeA: the
+                                   # node's ZPR address) that may carry traffic between other
+                                   # nodes. A node not listed is NOT transit-capable (fail
+                                   # closed). Unset or empty = no node is transit-capable.
 }
 
 # "CPolicy" is a Communications Policy.
@@ -114,12 +118,18 @@ struct AttrMapping {
 }
 
 # Two node peers form a link. Bi-directional and symmetric.
+#
+# Either substrate field may be left unset (has_nodeXSubstrate() == false): that node has
+# no substrate address in policy and reports its own when it authenticates
+# (zpr-core#1381). Both ends may be unset, e.g. a link between two endpoint Zodes.
+# Readers must check has_*() and must not treat an unset NetAddr as an address; writers
+# leave the field unset rather than writing an empty hostname or port 0.
 struct Peering {
   linkId         @0 :Text;           # identifier for the link (for logging, debugging)
-  nodeA          @1 :Text;           # node identifier
-  nodeASubstrate @2 :NetAddr;
-  nodeB          @3 :Text;           # node identifier
-  nodeBSubstrate @4 :NetAddr;
+  nodeA          @1 :Text;           # node identifier (by convention its ZPR address)
+  nodeASubstrate @2 :NetAddr;        # unset = reported by the node at run time
+  nodeB          @3 :Text;           # node identifier (by convention its ZPR address)
+  nodeBSubstrate @4 :NetAddr;        # unset = reported by the node at run time
   attrs          @5 :List(AttrExpr); # link attributes
 }
 
